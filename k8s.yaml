@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dnstap
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dnstap
+  template:
+    metadata:
+      labels:
+        app: dnstap
+    spec:
+      containers:
+      - name: dnstap
+        image: andrewstuart/dnstap
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        ports:
+        - containerPort: 12345
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dnstap
+  namespace: default
+spec:
+  ports:
+  - port: 12345
+    targetPort: 12345
+  selector:
+    app: dnstap

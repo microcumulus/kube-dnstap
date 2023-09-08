@@ -5,6 +5,7 @@ Find out which pods are querying which domains in your Kubernetes cluster.
 ## Usage
 
 ```bash
+$ kubectl create ns dnstap
 $ kubectl apply -f https://raw.githubusercontent.com/microcumulus/kube-dnstap/master/k8s.yaml
 ```
 

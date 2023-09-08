@@ -5,7 +5,7 @@ Find out which pods are querying which domains in your Kubernetes cluster.
 ## Usage
 
 ```bash
-$ kubectl apply -f https://raw.githubusercontent.com/microcumulus/kube-dnstap/master/kube-dnstap.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/microcumulus/kube-dnstap/master/k8s.yaml
 ```
 
 CoreDNS:

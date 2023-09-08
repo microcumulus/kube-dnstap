@@ -71,6 +71,7 @@ func main() {
 			}
 			lg := logrus.WithFields(logrus.Fields{
 				"pod": pod.Name,
+				"ns":  pod.Namespace,
 				// "addr": addr,
 				// "tap":  f,
 			})
@@ -95,7 +96,7 @@ func main() {
 				continue
 			}
 
-			lg.WithField("type", f.Message.Type.String()).WithField("msg", msg.Question[0].Name).Info()
+			lg.WithField("query", msg.Question[0].Name).Info()
 		}
 	}
 }

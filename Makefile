@@ -6,7 +6,7 @@ NAMESPACE=dnstap
 
 FQTAG=$(DOCKER_ROOT)/$(IMAGE):$(TAG)
 
-SHA=$(shell podman inspect --format "{{ index .RepoDigests 0 }}" $(1))
+SHA=$(shell podman inspect --format "{{ index .RepoDigests 0 }}" $(1) | sed 's/localhost\///')
 
 test:
 	go test ./...
@@ -17,6 +17,8 @@ go:
 docker: go test
 	podman build -t $(FQTAG) . 
 	podman push $(FQTAG)
+	# push again but strip localhost/ from the sha name
+	podman push $(call SHA,$(FQTAG))
 
 deploy: docker
 	kubectl apply --namespace $(NAMESPACE) -f k8s.yaml

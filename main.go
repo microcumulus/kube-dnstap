@@ -36,6 +36,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	logrus.Info("listening")
 
 	m := k8sMap(ctx)
 
@@ -83,6 +84,10 @@ func main() {
 				lg.Error("no dns message found")
 				continue
 			}
+			if *f.Message.Type != dnstap.Message_CLIENT_QUERY {
+				lg.WithField("type", f.Message.Type.String()).Debug("not a query")
+				continue
+			}
 			var msg dns.Msg
 			err = msg.Unpack(msgBs)
 			if err != nil {
@@ -102,7 +107,10 @@ func k8sMap(ctx context.Context) sync.Map {
 		// load incluster config
 		cfg, err = rest.InClusterConfig()
 	} else {
-		kubeconfig := filepath.Join(os.Getenv("HOME"), ".kube", "home")
+		kubeconfig := os.Getenv("KUBECONFIG")
+		if kubeconfig == "" {
+			kubeconfig = filepath.Join(os.Getenv("HOME"), ".kube", "config")
+		}
 		cfg, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
 	}
 	if err != nil {

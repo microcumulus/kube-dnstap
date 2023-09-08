@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"strings"
 
 	"github.com/fsnotify/fsnotify"
@@ -9,7 +10,8 @@ import (
 )
 
 var (
-	lg = logrus.New()
+	lg    = logrus.New()
+	isK8s = os.Getenv("KUBERNETES_SERVICE_HOST") != ""
 )
 
 func setupConfig() *viper.Viper {
@@ -31,6 +33,10 @@ func setupConfig() *viper.Viper {
 		".svc.cluster.local.",
 		".cluster.local.",
 	})
+
+	if isK8s {
+		lg.SetFormatter(&logrus.JSONFormatter{})
+	}
 
 	if err := cfg.ReadInConfig(); err != nil {
 		lg.WithError(err).Error("could not read initial config")

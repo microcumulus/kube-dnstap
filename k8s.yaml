@@ -21,6 +21,9 @@ spec:
       - name: dnstap
         image: andrewstuart/dnstap
         imagePullPolicy: Always
+        env:
+        - name: NOLOG
+          value: "true"
         resources:
           requests:
             cpu: 250m

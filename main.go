@@ -22,11 +22,12 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-const gb = 1024 * 1024 * 1024
-
 func main() {
 	ctx := morecontext.ForSignals()
-	// logrus.SetFormatter(&logrus.JSONFormatter{})
+
+	if os.Getenv("KUBERNETES_SERVICE_HOST") != "" {
+		logrus.SetFormatter(&logrus.JSONFormatter{})
+	}
 
 	l, err := net.Listen("tcp", "0.0.0.0:1234")
 	if err != nil {

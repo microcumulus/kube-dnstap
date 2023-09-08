@@ -26,8 +26,8 @@ func setupConfig() *viper.Viper {
 	cfg.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	cfg.SetDefault("listen.addr", "0.0.0.0:12345")
-	cfg.SetDefault("listen.metrics", "0.0.0.0:8080")
-	cfg.SetDefault("ignore.suffixes", []string{
+	cfg.SetDefault("metrics.addr", "0.0.0.0:8080")
+	cfg.SetDefault("suffixes.ignore", []string{
 		".svc.cluster.local.",
 		".cluster.local.",
 	})

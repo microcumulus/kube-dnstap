@@ -25,7 +25,8 @@ Add to the main block:
 
 ## Configuration
 
-The following environment variables (_ separated) or yaml keys in /etc/kube-dnstap.yaml can be set:
+The following configs can be set via environment variables (`_` separated) or
+yaml keys in `/etc/kube-dnstap.yaml`:
 
 ```yaml
 suffixes:
@@ -33,3 +34,8 @@ suffixes:
     - .cluster.local.
   only: # Overrides ignore
     - .example.com.
+listen:
+  addr: 0.0.0.0:12345
+metrics:
+  addr: 0.0.0.0:8080
+```

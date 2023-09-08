@@ -31,7 +31,7 @@ import (
 var (
 	isK8s = os.Getenv("KUBERNETES_SERVICE_HOST") != ""
 	query = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "coredns_dnstap_dns_queries_total",
+		Name: "dnstap_dns_queries_total",
 		Help: "The total number of dns queries",
 	}, []string{"name", "type", "ns", "pod"})
 )

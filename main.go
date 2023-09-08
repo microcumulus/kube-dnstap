@@ -4,14 +4,19 @@ import (
 	"context"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"sync"
 
 	dnstap "github.com/dnstap/golang-dnstap"
 	"github.com/gopuff/morecontext"
 	"github.com/miekg/dns"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 	corev1 "k8s.io/api/core/v1"
@@ -23,16 +28,26 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-var isK8s = os.Getenv("KUBERNETES_SERVICE_HOST") != ""
+var (
+	isK8s = os.Getenv("KUBERNETES_SERVICE_HOST") != ""
+	query = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "dns_queries_total",
+		Help: "The total number of dns queries",
+	}, []string{"name", "type", "ns", "pod"})
+)
 
 func main() {
+	cfg := setupConfig()
 	ctx := morecontext.ForSignals()
+
+	http.Handle("/metrics", promhttp.Handler())
+	go http.ListenAndServe(cfg.GetString("metrics.addr"), nil)
 
 	if isK8s {
 		logrus.SetFormatter(&logrus.JSONFormatter{})
 	}
 
-	l, err := net.Listen("tcp", "0.0.0.0:12345")
+	l, err := net.Listen("tcp", cfg.GetString("listen.addr"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -43,6 +58,9 @@ func main() {
 	i := dnstap.NewFrameStreamSockInput(l)
 	bch := make(chan []byte)
 	go i.ReadInto(bch)
+
+	ignores := cfg.GetStringSlice("suffixes.ignore")
+	only := cfg.GetStringSlice("suffixes.only")
 
 	for {
 		select {
@@ -85,10 +103,12 @@ func main() {
 				lg.Error("no dns message found")
 				continue
 			}
+
 			if *f.Message.Type != dnstap.Message_CLIENT_QUERY {
 				lg.WithField("type", f.Message.Type.String()).Debug("not a query")
 				continue
 			}
+
 			var msg dns.Msg
 			err = msg.Unpack(msgBs)
 			if err != nil {
@@ -96,7 +116,27 @@ func main() {
 				continue
 			}
 
-			lg.WithField("query", msg.Question[0].Name).Info()
+		q:
+			for _, n := range msg.Question {
+				if len(only) > 0 {
+					for _, suff := range only {
+						if !strings.HasSuffix(n.Name, suff) {
+							continue q
+						}
+					}
+				}
+				for _, suff := range ignores {
+					if strings.HasSuffix(n.Name, suff) {
+						continue q
+					}
+				}
+				query.WithLabelValues(n.Name, dns.TypeToString[n.Qtype], pod.Namespace, pod.Name).Inc()
+
+				if cfg.GetBool("noLog") {
+					continue
+				}
+				lg.WithField("name", n.Name).Info()
+			}
 		}
 	}
 }

@@ -23,3 +23,13 @@ Add to the main block:
   }
 ```
 
+## Configuration
+
+The following environment variables (_ separated) or yaml keys in /etc/kube-dnstap.yaml can be set:
+
+```yaml
+suffixes:
+  ignore:
+    - .cluster.local.
+  only: # Overrides ignore
+    - .example.com.

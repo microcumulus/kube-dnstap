@@ -18,18 +18,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+var isK8s = os.Getenv("KUBERNETES_SERVICE_HOST") != ""
+
 func main() {
 	ctx := morecontext.ForSignals()
 
-	if os.Getenv("KUBERNETES_SERVICE_HOST") != "" {
+	if isK8s {
 		logrus.SetFormatter(&logrus.JSONFormatter{})
 	}
 
-	l, err := net.Listen("tcp", "0.0.0.0:1234")
+	l, err := net.Listen("tcp", "0.0.0.0:12345")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -93,12 +96,19 @@ func main() {
 }
 
 func k8sMap(ctx context.Context) sync.Map {
-	kubeconfig := filepath.Join(os.Getenv("HOME"), ".kube", "home")
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	var cfg *rest.Config
+	var err error
+	if isK8s {
+		// load incluster config
+		cfg, err = rest.InClusterConfig()
+	} else {
+		kubeconfig := filepath.Join(os.Getenv("HOME"), ".kube", "home")
+		cfg, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+	}
 	if err != nil {
 		logrus.WithError(err).Fatal("failed to build config")
 	}
-	clientset, err := kubernetes.NewForConfig(config)
+	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		logrus.WithError(err).Fatal("failed to create clientset")
 	}

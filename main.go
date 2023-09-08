@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"log"
 	"net"
 	"os"
@@ -10,13 +12,15 @@ import (
 	"syscall"
 
 	dnstap "github.com/dnstap/golang-dnstap"
-	"github.com/docker/distribution/context"
+	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 )
+
+const gb = 1024 * 1024 * 1024
 
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, os.Interrupt)
@@ -27,11 +31,28 @@ func main() {
 		log.Fatal(err)
 	}
 
-	m := k8sMap(ctx)
+	_ = k8sMap(ctx)
 
 	i := dnstap.NewFrameStreamSockInput(l)
-	for i.Read() {
+	bch := make(chan []byte)
+	go i.ReadInto(bch)
+
+	for bs := range bch {
+		r, err := dnstap.NewReader(bytes.NewReader(bs), nil)
+		if err != nil {
+			logrus.WithError(err).Error("failed to create dnstap reader")
+			continue
+		}
+		d := dnstap.NewDecoder(r, gb)
+		f := &dnstap.Dnstap{}
+		err = d.Decode(f)
+		if err != nil {
+			logrus.WithError(err).Error("failed to decode dnstap message")
+			continue
+		}
+		log.Println(f.String())
 	}
+
 }
 
 func k8sMap(ctx context.Context) sync.Map {
@@ -58,6 +79,6 @@ func k8sMap(ctx context.Context) sync.Map {
 		},
 	})
 
-	go informer.Run(ctx.Done)
+	go informer.Run(ctx.Done())
 	return m
 }

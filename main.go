@@ -28,8 +28,10 @@ func main() {
 	cfg := setupConfig()
 	ctx := morecontext.ForSignals()
 
-	http.Handle("/metrics", promhttp.Handler())
-	go http.ListenAndServe(cfg.GetString("metrics.addr"), nil)
+	if !cfg.GetBool("metrics.disabled") {
+		http.Handle("/metrics", promhttp.Handler())
+		go http.ListenAndServe(cfg.GetString("metrics.addr"), nil)
+	}
 
 	l, err := net.Listen("tcp", cfg.GetString("listen.addr"))
 	if err != nil {

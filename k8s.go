@@ -15,7 +15,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func k8sMap(ctx context.Context) sync.Map {
+func k8sMap(ctx context.Context) *sync.Map {
 	var cfg *rest.Config
 	var err error
 	if isK8s {
@@ -68,5 +68,5 @@ func k8sMap(ctx context.Context) sync.Map {
 	}
 
 	go informer.Run(ctx.Done())
-	return m
+	return &m
 }

@@ -12,10 +12,10 @@ spec:
     metadata:
       labels:
         app: dnstap
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "8080"
-        prometheus.io/path: "/metrics"
+      annotations: {}
+      #   prometheus.io/scrape: "true"
+      #   prometheus.io/port: "8080"
+      #   prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: dnstap
@@ -23,7 +23,9 @@ spec:
         imagePullPolicy: Always
         env:
         - name: NOLOG
-          value: "true"
+          value: "false"
+        - name: METRICS_DISABLED
+          value: "false"
         resources:
           requests:
             cpu: 250m
